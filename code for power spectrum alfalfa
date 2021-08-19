@@ -1,0 +1,27 @@
+#compute the contrast
+def contrast(lon, lat, nside, n_g_mean):
+    eq = SkyCoord(lon, lat, unit='deg')
+    l, b = eq.galactic.l.value, eq.galactic.b.value
+    m = np.zeros(hp.nside2npix(nside))
+    index=hp.ang2pix(nside,l,b,lonlat=True)
+    idx, counts = np.unique(index, return_counts=True)
+    m[idx] =counts
+    m=(m-n_g_mean)/n_g_mean
+
+    return m
+ 
+#find the shot noise for each bin
+total_pix=np.sum(hi_mask)
+n_g_mean=N_g/total_pix # N_g refers to the total number of galaxies in each mass group
+
+#make the map of contrast and mask them
+for i in range(13):
+    globals()['mass_map_noisefree%s' % (i+1)]=contrast(globals()['mass%s' % (i+1)][2], globals()['mass%s' % (i+1)][1], nside=512,n_g_mean=n_g_mean[i])
+    globals()['mass_map_mask%s' % (i+1)]=hp.ma(globals()['mass_map_noisefree%s' % (i+1)])
+    globals()['mass_map_mask%s' % (i+1)].mask = np.logical_not(hi_mask)
+
+#generate the cl for each map (the one contains both noise and signal)
+for i in range(13):
+    globals()['cl_noised_%s' % (i+1)]=hp.anafast(globals()['mass_map_mask%s' % (i+1)])
+    globals()['ell_%s' % (i+1)]=np.arange(len( globals()['cl_noised_%s' % (i+1)]))
+    globals()['cl_%s' % (i+1)]=globals()['cl_noised_%s' % (i+1)]-1/n_g_mean[i] #substract the noise
