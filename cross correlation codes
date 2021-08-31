@@ -1,0 +1,18 @@
+cl=hp.anafast(alfalfa_contrast,two_mass_contrast)#where alfalfa_contrast and two_mass_contrast are the contrast maps made before
+
+#measurement of pixel and beam window function
+pl=hp.pixwin(nside=512,lmax=cl.size-1)
+bl=hp.gauss_beam(fwhm=0.0011053752,lmax=cl.size-1)#the value of FWHM was obtained from the alfalfa technical details, which is 3'8 and is converted into radians
+wl=np.sqrt(pl**2*bl)
+s
+#after correction in pixel and beam effects
+cl_beam=cl/(wl**2)
+
+#plot the cross correlation
+ell = np.arange(len(cl_beam))
+plt.figure(figsize=(10, 5))
+plt.plot(ell, ell  * cl_beam)
+plt.yscale("log")
+plt.xlabel("$\ell$")
+plt.ylabel("$\ell C_{\ell}$")
+plt.grid()
