@@ -1,4 +1,37 @@
-cl=hp.anafast(alfalfa_contrast,two_mass_contrast)#where alfalfa_contrast and two_mass_contrast are the contrast maps made before
+#import the mask of both maps generated before
+two_mass_mask = hp.read_map("2M++_115_mask_nside512.fits").astype(np.bool_)
+alfalfa_mask=hp.read_map("ALFALFA_MASK.fits").astype(np.bool_)
+
+#find the mask for cross correlation
+nside=512
+m = np.zeros(hp.nside2npix(nside))
+for i in range(npix):
+    if two_mass_mask[i]==alfalfa_mask[i]:
+        if two_mass_mask[i]==True:
+            m[i]=hp.UNSEEN
+combined_mask=hp.mask_bad(m)
+m_masked=hp.ma(m)
+m_masked.mask=np.logical_not(combined_mask)
+hp.mollview(combined_mask)
+hp.graticule()
+
+#mask the maps
+two_mass_masked=hp.ma(two_mass_map)
+two_mass_masked.mask=np.logical_not(combined_mask)
+alfalfa_masked=hp.ma(alfalfa_map)
+alfalfa_masked.mask=np.logical_not(combined_mask)
+
+#make the contrast
+total_pixel=np.sum(combined_mask)
+n_g_2_mass=np.sum(counts_2_mass)
+n_g_alfalfa=np.sum(counts_alfalfa)
+mean_2_mass=n_g_2_mass/total_pixel
+mean_n_g_alfalfa=n_g_alfalfa/total_pixel
+alfalfa_contrast=(alfalfa_masked-mean_n_g_alfalfa)/mean_n_g_alfalfa
+two_mass_contrast=(two_mass_masked-mean_2_mass)/mean_2_mass
+
+#measure the cross correlation
+cl=hp.anafast(alfalfa_contrast,two_mass_contrast)
 
 #measurement of pixel and beam window function
 pl=hp.pixwin(nside=512,lmax=cl.size-1)
